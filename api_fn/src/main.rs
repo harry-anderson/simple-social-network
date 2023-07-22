@@ -5,12 +5,13 @@ use aws_lambda_events::{
 };
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use tracing::info;
+use model::{CreateUserRequest, Entity};
 
 use crate::error::CustomError;
 
 mod db;
 mod error;
+mod model;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -32,53 +33,43 @@ async fn function_handler(
     event: LambdaEvent<Request>,
     _db_client: &db::DbClient,
 ) -> Result<Response, Error> {
-    info!("event {:?}", event);
+    // info!("event {:?}", event);
     let method = &event.payload.request_context.http.method;
-
     match *method {
         Method::GET => {
             let entity = path_param(&event, "entity").await?;
             let id = path_param(&event, "id").await?;
-
             let res = format!("path params {} {}", entity, id);
 
-            let resp = Response {
-                status_code: 200,
-                body: Some(Body::Text(res)),
-                headers: HeaderMap::new(),
-                multi_value_headers: HeaderMap::new(),
-                is_base64_encoded: None,
-                cookies: vec![],
-            };
-            Ok(resp)
+            Ok(response(200, Some(Body::Text(res))))
         }
         Method::POST => {
             let entity = path_param(&event, "entity").await?;
             let action = path_param(&event, "action").await?;
-            let body = &event.payload.body.unwrap_or(String::from("None"));
-            //
-            let res = format!("path params {} {} {:?}", entity, action, body);
-            Ok(Response {
-                status_code: 200,
-                body: Some(Body::Text(res)),
-                headers: HeaderMap::new(),
-                multi_value_headers: HeaderMap::new(),
-                is_base64_encoded: None,
-                cookies: vec![],
-            })
+            let Some(body) = &event.payload.body else {
+                return Ok(response(400, Some(Body::Text(String::from("no request body")))))
+            };
+
+            match (entity.as_str(), action.as_str()) {
+                ("user", "create") => {
+                    let Ok(request) = serde_json::from_str::<CreateUserRequest>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let res = serde_json::to_string(&request)?;
+
+                    Ok(response(200, Some(Body::Text(res))))
+                }
+                (_, _) => Ok(response(
+                    400,
+                    Some(Body::Text(String::from("invalid request"))),
+                )),
+            }
         }
-        _ => Ok(Response {
-            status_code: 404,
-            body: None,
-            headers: HeaderMap::new(),
-            multi_value_headers: HeaderMap::new(),
-            is_base64_encoded: None,
-            cookies: vec![],
-        }),
+        _ => Ok(response(400, None)),
     }
 }
 
-async fn path_param(event: &LambdaEvent<Request>, name: &str, ) -> Result<String, Error> {
+async fn path_param(event: &LambdaEvent<Request>, name: &str) -> Result<String, Error> {
     let param = event
         .payload
         .path_parameters
@@ -88,3 +79,13 @@ async fn path_param(event: &LambdaEvent<Request>, name: &str, ) -> Result<String
     Ok(param.to_string())
 }
 
+fn response(status_code: i64, body: Option<Body>) -> Response {
+    Response {
+        status_code,
+        body,
+        headers: HeaderMap::new(),
+        multi_value_headers: HeaderMap::new(),
+        is_base64_encoded: None,
+        cookies: vec![],
+    }
+}
