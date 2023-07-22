@@ -30,23 +30,15 @@ async fn main() -> Result<(), Error> {
 
 async fn function_handler(
     event: LambdaEvent<Request>,
-    db_client: &db::DbClient,
+    _db_client: &db::DbClient,
 ) -> Result<Response, Error> {
     info!("event {:?}", event);
     let method = &event.payload.request_context.http.method;
 
     match *method {
         Method::GET => {
-            let entity = &event
-                .payload
-                .path_parameters
-                .get("entity")
-                .ok_or(CustomError::new("no path param: entity"))?;
-            let id = &event
-                .payload
-                .path_parameters
-                .get("id")
-                .ok_or(CustomError::new("no path param: id"))?;
+            let entity = path_param(&event, "entity").await?;
+            let id = path_param(&event, "id").await?;
 
             let res = format!("path params {} {}", entity, id);
 
@@ -61,16 +53,8 @@ async fn function_handler(
             Ok(resp)
         }
         Method::POST => {
-            let entity = &event
-                .payload
-                .path_parameters
-                .get("entity")
-                .ok_or(CustomError::new("no path param: entity"))?;
-            let action = &event
-                .payload
-                .path_parameters
-                .get("action")
-                .ok_or(CustomError::new("no path param: action"))?;
+            let entity = path_param(&event, "entity").await?;
+            let action = path_param(&event, "action").await?;
             let body = &event.payload.body.unwrap_or(String::from("None"));
             //
             let res = format!("path params {} {} {:?}", entity, action, body);
@@ -93,3 +77,14 @@ async fn function_handler(
         }),
     }
 }
+
+async fn path_param(event: &LambdaEvent<Request>, name: &str, ) -> Result<String, Error> {
+    let param = event
+        .payload
+        .path_parameters
+        .get(name)
+        .ok_or(CustomError::new(&format!("no path param: {name}")))?;
+
+    Ok(param.to_string())
+}
+
