@@ -45,6 +45,7 @@ Resources:
   ApiTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: social-network
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         -

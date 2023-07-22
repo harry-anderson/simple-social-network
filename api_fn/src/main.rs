@@ -35,8 +35,8 @@ async fn function_handler(
     info!("event {:?}", event);
     let method = &event.payload.request_context.http.method;
 
-    match method {
-        &Method::GET => {
+    match *method {
+        Method::GET => {
             let entity = &event
                 .payload
                 .path_parameters
@@ -60,7 +60,28 @@ async fn function_handler(
             };
             Ok(resp)
         }
-        // &Method::POST => {}
+        Method::POST => {
+            let entity = &event
+                .payload
+                .path_parameters
+                .get("entity")
+                .ok_or(CustomError::new("no path param: entity"))?;
+            let action = &event
+                .payload
+                .path_parameters
+                .get("action")
+                .ok_or(CustomError::new("no path param: action"))?;
+            //
+            let res = format!("path params {} {}", entity, action);
+            Ok(Response {
+                status_code: 200,
+                body: Some(Body::Text(res)),
+                headers: HeaderMap::new(),
+                multi_value_headers: HeaderMap::new(),
+                is_base64_encoded: None,
+                cookies: vec![],
+            })
+        }
         _ => Ok(Response {
             status_code: 404,
             body: None,
@@ -71,5 +92,3 @@ async fn function_handler(
         }),
     }
 }
-
-
