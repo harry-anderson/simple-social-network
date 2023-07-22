@@ -71,8 +71,9 @@ async fn function_handler(
                 .path_parameters
                 .get("action")
                 .ok_or(CustomError::new("no path param: action"))?;
+            let body = &event.payload.body.unwrap_or(String::from("None"));
             //
-            let res = format!("path params {} {}", entity, action);
+            let res = format!("path params {} {} {:?}", entity, action, body);
             Ok(Response {
                 status_code: 200,
                 body: Some(Body::Text(res)),
