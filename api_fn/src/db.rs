@@ -77,11 +77,15 @@ impl DbClient {
         Ok(v)
     }
 
+    // 
     pub async fn query_single_table<T>(
         &self,
         pk: String,
         sk: Option<String>,
         gsi: Option<String>,
+        // "#pk = :pk and #sk = :sk",
+        // "#pk = :pk and #sk begins_with(#sk, :sk)",
+        expression: &str,
     ) -> anyhow::Result<Vec<T>>
     where
         T: DeserializeOwned,
@@ -93,7 +97,7 @@ impl DbClient {
         match sk {
             Some(sk) => {
                 self.query(
-                    "#pk = :pk and #sk = :sk",
+                    expression,
                     HashMap::from([
                         (String::from("#pk"), String::from(primary_index)),
                         (String::from("#sk"), String::from(secondary_index)),

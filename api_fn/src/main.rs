@@ -1,12 +1,15 @@
+use std::collections::HashMap;
+
 use aws_lambda_events::{
     apigw::{ApiGatewayV2httpRequest as Request, ApiGatewayV2httpResponse as Response},
     encodings::Body,
     http::HeaderMap,
 };
+use aws_sdk_dynamodb::types::AttributeValue;
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use model::{User, Entity, Story, Comment};
-use serde_json::json;
+use model::{Comment, Entity, Story, User};
+use serde_json::{json, to_string};
 
 use crate::error::CustomError;
 
@@ -43,9 +46,26 @@ async fn function_handler(
 
             match entity.as_str() {
                 "stories" => {
-                    //
-                    let res = format!("get stories {}", id);
-                    Ok(response(200, Some(Body::Text(res))))
+                    let res = db_client
+                        .query::<Entity>(
+                            "#pk = :pk and begins_with(#sk, :sk)",
+                            HashMap::from([
+                                (String::from("#pk"), String::from("PK")),
+                                (String::from("#sk"), String::from("SK")),
+                            ]),
+                            HashMap::from([
+                                (String::from(":pk"), AttributeValue::S(format!("user#{id}"))),
+                                (
+                                    String::from(":sk"),
+                                    AttributeValue::S(String::from("story#")),
+                                ),
+                            ]),
+                            None,
+                        )
+                        .await?;
+
+                    let json = to_string(&res)?;
+                    Ok(response(200, Some(Body::Text(json))))
                 }
                 "comments" => {
                     //
