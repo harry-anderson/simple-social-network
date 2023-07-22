@@ -21,3 +21,4 @@ aws-config = "0.55.3"
 aws-sdk-dynamodb = "0.28.0"
 serde_dynamo = { version = "4.2.3", features = ["aws-sdk-dynamodb+0_28"] }
 uuid = "1.4.0"
+http = "0.2.9"

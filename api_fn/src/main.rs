@@ -3,6 +3,7 @@ use aws_lambda_events::{
     encodings::Body,
     http::HeaderMap,
 };
+use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use tracing::info;
 
@@ -32,28 +33,43 @@ async fn function_handler(
     db_client: &db::DbClient,
 ) -> Result<Response, Error> {
     info!("event {:?}", event);
+    let method = &event.payload.request_context.http.method;
 
-    let provider = &event
-        .payload
-        .path_parameters
-        .get("provider")
-        .ok_or(CustomError::new("no req param: provider"))?;
-    let action = &event
-        .payload
-        .path_parameters
-        .get("action")
-        .ok_or(CustomError::new("no req param: acition"))?;
+    match method {
+        &Method::GET => {
+            let entity = &event
+                .payload
+                .path_parameters
+                .get("entity")
+                .ok_or(CustomError::new("no path param: entity"))?;
+            let id = &event
+                .payload
+                .path_parameters
+                .get("id")
+                .ok_or(CustomError::new("no path param: id"))?;
 
-    info!("path params {} {}", provider, action);
+            let res = format!("path params {} {}", entity, id);
 
-    let resp = Response {
-        status_code: 200,
-        body: Some(Body::Text(String::from("Hello Zordie"))),
-        headers: HeaderMap::new(),
-        multi_value_headers: HeaderMap::new(),
-        is_base64_encoded: None,
-        cookies: vec![],
-    };
-
-    Ok(resp)
+            let resp = Response {
+                status_code: 200,
+                body: Some(Body::Text(res)),
+                headers: HeaderMap::new(),
+                multi_value_headers: HeaderMap::new(),
+                is_base64_encoded: None,
+                cookies: vec![],
+            };
+            Ok(resp)
+        }
+        // &Method::POST => {}
+        _ => Ok(Response {
+            status_code: 404,
+            body: None,
+            headers: HeaderMap::new(),
+            multi_value_headers: HeaderMap::new(),
+            is_base64_encoded: None,
+            cookies: vec![],
+        }),
+    }
 }
+
+
