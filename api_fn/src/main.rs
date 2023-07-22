@@ -68,9 +68,26 @@ async fn function_handler(
                     Ok(response(200, Some(Body::Text(json))))
                 }
                 "comments" => {
-                    //
-                    let res = format!("get comments {}", id);
-                    Ok(response(200, Some(Body::Text(res))))
+                    let res = db_client
+                        .query::<Entity>(
+                            "#pk = :pk and begins_with(#sk, :sk)",
+                            HashMap::from([
+                                (String::from("#pk"), String::from("SK")),
+                                (String::from("#sk"), String::from("PK")),
+                            ]),
+                            HashMap::from([
+                                (String::from(":pk"), AttributeValue::S(format!("story#{id}"))),
+                                (
+                                    String::from(":sk"),
+                                    AttributeValue::S(String::from("comment#")),
+                                ),
+                            ]),
+                            Some(String::from("GSI1")),
+                        )
+                        .await?;
+
+                    let json = to_string(&res)?;
+                    Ok(response(200, Some(Body::Text(json))))
                 }
                 _ => Ok(response(
                     400,

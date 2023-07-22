@@ -1,7 +1,7 @@
-use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::operation::delete_item::DeleteItemOutput;
 use aws_sdk_dynamodb::operation::put_item::PutItemOutput;
 use aws_sdk_dynamodb::types::AttributeValue;
+use aws_sdk_dynamodb::Client;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_dynamo::aws_sdk_dynamodb_0_28::{to_attribute_value, to_item};
@@ -76,51 +76,4 @@ impl DbClient {
         let v: Vec<T> = from_items(items.to_vec())?;
         Ok(v)
     }
-
-    // 
-    pub async fn query_single_table<T>(
-        &self,
-        pk: String,
-        sk: Option<String>,
-        gsi: Option<String>,
-        // "#pk = :pk and #sk = :sk",
-        // "#pk = :pk and #sk begins_with(#sk, :sk)",
-        expression: &str,
-    ) -> anyhow::Result<Vec<T>>
-    where
-        T: DeserializeOwned,
-    {
-        let (primary_index, secondary_index) = match gsi {
-            Some(_) => ("SK", "PK"),
-            None => ("PK", "SK"),
-        };
-        match sk {
-            Some(sk) => {
-                self.query(
-                    expression,
-                    HashMap::from([
-                        (String::from("#pk"), String::from(primary_index)),
-                        (String::from("#sk"), String::from(secondary_index)),
-                    ]),
-                    HashMap::from([
-                        (String::from(":pk"), AttributeValue::S(pk)),
-                        (String::from(":sk"), AttributeValue::S(sk)),
-                    ]),
-                    gsi,
-                )
-                .await
-            }
-            None => {
-                self.query(
-                    "#pk = :pk",
-                    HashMap::from([(String::from("#pk"), String::from(primary_index))]),
-                    HashMap::from([(String::from(":pk"), AttributeValue::S(pk))]),
-                    gsi,
-                )
-                .await
-            }
-        }
-    }
-
 }
-
