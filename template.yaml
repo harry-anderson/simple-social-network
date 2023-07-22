@@ -28,6 +28,9 @@ Resources:
       CodeUri: api_fn   
       Handler: bootstrap    # Do not change, as this is the default executable name produced by Cargo Lambda
       Runtime: provided.al2
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref ApiTable
       Events:
         Get:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -61,9 +64,18 @@ Resources:
         - 
           AttributeName: "SK"
           KeyType: "RANGE"
-      TimeToLiveSpecification:
-        AttributeName: "ttl"
-        Enabled: true
+      GlobalSecondaryIndexes: 
+        - 
+          IndexName: "GSI1"
+          KeySchema: 
+            - 
+              AttributeName: "SK"
+              KeyType: "HASH"
+            - 
+              AttributeName: "PK"
+              KeyType: "RANGE"
+          Projection: 
+            ProjectionType: ALL
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

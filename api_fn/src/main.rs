@@ -5,7 +5,8 @@ use aws_lambda_events::{
 };
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use model::{CreateUserRequest, Entity};
+use model::{CreateUserRequest, Entity, CreateStoryRequest, CreateCommentRequest};
+use serde_json::json;
 
 use crate::error::CustomError;
 
@@ -31,7 +32,7 @@ async fn main() -> Result<(), Error> {
 
 async fn function_handler(
     event: LambdaEvent<Request>,
-    _db_client: &db::DbClient,
+    db_client: &db::DbClient,
 ) -> Result<Response, Error> {
     // info!("event {:?}", event);
     let method = &event.payload.request_context.http.method;
@@ -39,9 +40,23 @@ async fn function_handler(
         Method::GET => {
             let entity = path_param(&event, "entity").await?;
             let id = path_param(&event, "id").await?;
-            let res = format!("path params {} {}", entity, id);
 
-            Ok(response(200, Some(Body::Text(res))))
+            match entity.as_str() {
+                "stories" => {
+                    //
+                    let res = format!("get stories {}", id);
+                    Ok(response(200, Some(Body::Text(res))))
+                }
+                "comments" => {
+                    //
+                    let res = format!("get comments {}", id);
+                    Ok(response(200, Some(Body::Text(res))))
+                }
+                _ => Ok(response(
+                    400,
+                    Some(Body::Text(String::from("invalid request"))),
+                )),
+            }
         }
         Method::POST => {
             let entity = path_param(&event, "entity").await?;
@@ -55,7 +70,29 @@ async fn function_handler(
                     let Ok(request) = serde_json::from_str::<CreateUserRequest>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
-                    let res = serde_json::to_string(&request)?;
+                    let ent: Entity = request.into();
+                    let res = serde_json::to_string(&ent)?;
+                    let _db_res = db_client.put(ent).await?;
+
+                    Ok(response(200, Some(Body::Text(res))))
+                }
+                ("story", "create") => {
+                    let Ok(request) = serde_json::from_str::<CreateStoryRequest>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let ent: Entity = request.into();
+                    let res = serde_json::to_string(&ent)?;
+                    let _db_res = db_client.put(ent).await?;
+
+                    Ok(response(200, Some(Body::Text(res))))
+                }
+                ("comment", "create") => {
+                    let Ok(request) = serde_json::from_str::<CreateCommentRequest>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let ent: Entity = request.into();
+                    let res = serde_json::to_string(&ent)?;
+                    let _db_res = db_client.put(ent).await?;
 
                     Ok(response(200, Some(Body::Text(res))))
                 }
