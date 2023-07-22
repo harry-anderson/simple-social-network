@@ -5,7 +5,7 @@ use aws_lambda_events::{
 };
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use model::{User, Entity, Story, CreateCommentRequest};
+use model::{User, Entity, Story, Comment};
 use serde_json::json;
 
 use crate::error::CustomError;
@@ -87,7 +87,7 @@ async fn function_handler(
                     Ok(response(200, Some(Body::Text(res))))
                 }
                 ("comment", "create") => {
-                    let Ok(request) = serde_json::from_str::<CreateCommentRequest>(body) else {
+                    let Ok(request) = serde_json::from_str::<Comment>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
                     let ent: Entity = request.into();

@@ -2,21 +2,21 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
-    username: String,
-    password: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Story {
-    user: String,
-    content: String,
+    pub user: String,
+    pub content: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Comment {
-    story_id: String,
-    user: String,
-    content: String,
+    pub story_id: String,
+    pub user: String,
+    pub content: String,
 }
 
 /// record in dynamodb
@@ -72,6 +72,7 @@ impl From<Comment> for Entity {
         Entity::Comment {
             pk: format!("comment#{}", uuid::Uuid::new_v4()),
             sk: format!("story#{}", req.story_id),
+            user_id: format!("user#{}", req.user),
             comment_text: req.content,
         }
     }
