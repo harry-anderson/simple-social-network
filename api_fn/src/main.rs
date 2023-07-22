@@ -69,7 +69,11 @@ async fn function_handler(
                             Entity::Story { pk, sk, story_text } => {
                                 let user_id = pk.split('#').last().unwrap();
                                 let story_id = sk.split('#').last().unwrap();
-                                Some(json!({"user_id": user_id, "story_id": story_id, "content": story_text}))
+                                Some(json!({
+                                    "user_id": user_id,
+                                    "story_id": story_id,
+                                    "content": story_text
+                                }))
                             }
                             _ => None,
                         })
@@ -98,8 +102,28 @@ async fn function_handler(
                             Some(String::from("GSI1")),
                         )
                         .await?;
-
-                    let json = to_string(&res)?;
+                    let mapped = res
+                        .into_iter()
+                        .filter_map(|ent| match ent {
+                            Entity::Comment {
+                                pk,
+                                sk,
+                                comment_text,
+                                user_id,
+                            } => {
+                                let comment_id = pk.split('#').last().unwrap();
+                                let story_id = sk.split('#').last().unwrap();
+                                Some(json!({
+                                    "user_id": user_id,
+                                    "comment_id": comment_id,
+                                    "story_id": story_id,
+                                    "content": comment_text
+                                }))
+                            }
+                            _ => None,
+                        })
+                        .collect::<Vec<serde_json::Value>>();
+                    let json = to_string(&mapped)?;
                     Ok(response(200, Some(Body::Text(json))))
                 }
                 _ => Ok(response(
