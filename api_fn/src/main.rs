@@ -37,7 +37,6 @@ async fn function_handler(
     event: LambdaEvent<Request>,
     db_client: &db::DbClient,
 ) -> Result<Response, Error> {
-    // info!("event {:?}", event);
     let method = &event.payload.request_context.http.method;
     match *method {
         Method::GET => {
@@ -63,7 +62,6 @@ async fn function_handler(
                             None,
                         )
                         .await?;
-
                     let json = to_string(&res)?;
                     Ok(response(200, Some(Body::Text(json))))
                 }
@@ -76,7 +74,10 @@ async fn function_handler(
                                 (String::from("#sk"), String::from("PK")),
                             ]),
                             HashMap::from([
-                                (String::from(":pk"), AttributeValue::S(format!("story#{id}"))),
+                                (
+                                    String::from(":pk"),
+                                    AttributeValue::S(format!("story#{id}")),
+                                ),
                                 (
                                     String::from(":sk"),
                                     AttributeValue::S(String::from("comment#")),
@@ -107,10 +108,10 @@ async fn function_handler(
                     let Ok(request) = serde_json::from_str::<User>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
+                    let username = request.username.clone();
                     let ent: Entity = request.into();
-                    let res = serde_json::to_string(&ent)?;
+                    let res = json!({ "username": username }).to_string();
                     let _db_res = db_client.put(ent).await?;
-
                     Ok(response(200, Some(Body::Text(res))))
                 }
                 ("story", "create") => {
