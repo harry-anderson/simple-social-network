@@ -8,8 +8,9 @@ use aws_lambda_events::{
 use aws_sdk_dynamodb::types::AttributeValue;
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use model::{Comment, Entity, Story, User};
+use model::{CreateCommentInput, CreateStoryInput, CreateUserInput, Entity};
 use serde_json::{json, to_string};
+use uuid::Uuid;
 
 use crate::error::CustomError;
 
@@ -105,35 +106,49 @@ async fn function_handler(
 
             match (entity.as_str(), action.as_str()) {
                 ("user", "create") => {
-                    let Ok(request) = serde_json::from_str::<User>(body) else {
+                    let Ok(input) = serde_json::from_str::<CreateUserInput>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
-                    let username = request.username.clone();
-                    let ent: Entity = request.into();
-                    let res = json!({ "username": username }).to_string();
-                    let _db_res = db_client.put(ent).await?;
+                    let user_id = input.user_id.clone();
+                    let ent = Entity::User {
+                        pk: format!("user#{user_id}"),
+                        sk: format!("user#{user_id}"),
+                        password: input.password,
+                    };
+                    let _ = db_client.put(ent).await?;
+                    let res = json!({ "user_id": user_id }).to_string();
                     Ok(response(200, Some(Body::Text(res))))
                 }
                 ("story", "create") => {
-                    let Ok(request) = serde_json::from_str::<Story>(body) else {
+                    let Ok(input) = serde_json::from_str::<CreateStoryInput>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
-                    let ent: Entity = request.into();
-                    let res = serde_json::to_string(&ent)?;
-                    let _db_res = db_client.put(ent).await?;
-
+                    let story_id = Uuid::new_v4();
+                    let ent = Entity::Story {
+                        pk: format!("user#{}", input.user_id),
+                        sk: format!("story#{story_id}"),
+                        story_text: input.content,
+                    };
+                    let _ = db_client.put(ent).await?;
+                    let res = json!({ "story_id": story_id.to_string() }).to_string();
                     Ok(response(200, Some(Body::Text(res))))
                 }
                 ("comment", "create") => {
-                    let Ok(request) = serde_json::from_str::<Comment>(body) else {
+                    let Ok(input) = serde_json::from_str::<CreateCommentInput>(body) else {
                         return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
                     };
-                    let ent: Entity = request.into();
-                    let res = serde_json::to_string(&ent)?;
-                    let _db_res = db_client.put(ent).await?;
-
+                    let comment_id = Uuid::new_v4();
+                    let ent = Entity::Comment {
+                        pk: format!("comment#{}", comment_id),
+                        sk: format!("story#{}", input.story_id),
+                        user_id: input.user_id,
+                        comment_text: input.content,
+                    };
+                    let _ = db_client.put(ent).await?;
+                    let res = json!({ "comment_id": comment_id.to_string() }).to_string();
                     Ok(response(200, Some(Body::Text(res))))
                 }
+                //TODO deletes
                 (_, _) => Ok(response(
                     400,
                     Some(Body::Text(String::from("invalid request"))),

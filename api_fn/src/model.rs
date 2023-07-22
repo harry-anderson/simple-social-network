@@ -1,21 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct User {
-    pub username: String,
+pub struct CreateUserInput {
+    pub user_id: String,
     pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Story {
-    pub user: String,
+pub struct CreateStoryInput {
+    pub user_id: String,
     pub content: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Comment {
+pub struct CreateCommentInput {
     pub story_id: String,
-    pub user: String,
+    pub user_id: String,
     pub content: String,
 }
 
@@ -45,35 +45,4 @@ pub enum Entity {
         user_id: String,
         comment_text: String,
     },
-}
-
-impl From<User> for Entity {
-    fn from(req: User) -> Self {
-        Entity::User {
-            pk: format!("user#{}", req.username),
-            sk: format!("user#{}", req.username),
-            password: req.password,
-        }
-    }
-}
-
-impl From<Story> for Entity {
-    fn from(req: Story) -> Self {
-        Entity::Story {
-            pk: format!("user#{}", req.user),
-            sk: format!("story#{}", uuid::Uuid::new_v4()),
-            story_text: req.content,
-        }
-    }
-}
-
-impl From<Comment> for Entity {
-    fn from(req: Comment) -> Self {
-        Entity::Comment {
-            pk: format!("comment#{}", uuid::Uuid::new_v4()),
-            sk: format!("story#{}", req.story_id),
-            user_id: format!("user#{}", req.user),
-            comment_text: req.content,
-        }
-    }
 }
