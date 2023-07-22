@@ -63,7 +63,18 @@ async fn function_handler(
                             None,
                         )
                         .await?;
-                    let json = to_string(&res)?;
+                    let mapped = res
+                        .into_iter()
+                        .filter_map(|ent| match ent {
+                            Entity::Story { pk, sk, story_text } => {
+                                let user_id = pk.split('#').last().unwrap();
+                                let story_id = sk.split('#').last().unwrap();
+                                Some(json!({"user_id": user_id, "story_id": story_id, "content": story_text}))
+                            }
+                            _ => None,
+                        })
+                        .collect::<Vec<serde_json::Value>>();
+                    let json = to_string(&mapped)?;
                     Ok(response(200, Some(Body::Text(json))))
                 }
                 "comments" => {
