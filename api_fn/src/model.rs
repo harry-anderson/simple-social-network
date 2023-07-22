@@ -1,19 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CreateUserRequest {
+pub struct User {
     username: String,
     password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CreateStoryRequest {
+pub struct Story {
     user: String,
     content: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CreateCommentRequest {
+pub struct Comment {
     story_id: String,
     user: String,
     content: String,
@@ -47,8 +47,8 @@ pub enum Entity {
     },
 }
 
-impl From<CreateUserRequest> for Entity {
-    fn from(req: CreateUserRequest) -> Self {
+impl From<User> for Entity {
+    fn from(req: User) -> Self {
         Entity::User {
             pk: format!("user#{}", req.username),
             sk: format!("user#{}", req.username),
@@ -57,8 +57,8 @@ impl From<CreateUserRequest> for Entity {
     }
 }
 
-impl From<CreateStoryRequest> for Entity {
-    fn from(req: CreateStoryRequest) -> Self {
+impl From<Story> for Entity {
+    fn from(req: Story) -> Self {
         Entity::Story {
             pk: format!("user#{}", req.user),
             sk: format!("story#{}", uuid::Uuid::new_v4()),
@@ -67,8 +67,8 @@ impl From<CreateStoryRequest> for Entity {
     }
 }
 
-impl From<CreateCommentRequest> for Entity {
-    fn from(req: CreateCommentRequest) -> Self {
+impl From<Comment> for Entity {
+    fn from(req: Comment) -> Self {
         Entity::Comment {
             pk: format!("comment#{}", uuid::Uuid::new_v4()),
             sk: format!("story#{}", req.story_id),
