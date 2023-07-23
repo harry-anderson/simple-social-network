@@ -4,13 +4,13 @@ A simple social network backend rest api with persistent data;
 
 ## Overview
 
-I'm using AWS serverless application model and 1 rust lambda function to implement the API.
+I'm using [AWS serverless application](https://aws.amazon.com/serverless/sam/) model and 1 [rust lambda](https://github.com/awslabs/aws-lambda-rust-runtime) function to implement the API.
 
 ![API overview](./static/overview.png)
 
 ## Data model
 
-I'm using dynamodb as a database and single table design to store and retrieve relation data.
+I'm using AWS Dynamodb as a database and [single table design](https://www.alexdebrie.com/posts/dynamodb-single-table) to store and retrieve relational data.
 
 DynamoDB main table - indexed by user_id
 
