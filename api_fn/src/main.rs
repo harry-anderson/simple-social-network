@@ -8,7 +8,10 @@ use aws_lambda_events::{
 use aws_sdk_dynamodb::types::AttributeValue;
 use http::Method;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use model::{CreateCommentInput, CreateStoryInput, CreateUserInput, Entity};
+use model::{
+    CreateCommentInput, CreateStoryInput, CreateUserInput, DeleteCommentInput, DeleteStoryInput,
+    DeleteUserInput, Entity,
+};
 use serde_json::{json, to_string};
 use uuid::Uuid;
 
@@ -183,7 +186,103 @@ async fn function_handler(
                     let res = json!({ "comment_id": comment_id.to_string() }).to_string();
                     Ok(response(200, Some(Body::Text(res))))
                 }
-                //TODO deletes
+                ("user", "delete") => {
+                    let Ok(input) = serde_json::from_str::<DeleteUserInput>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let _ = db_client
+                        .delete(
+                            format!("user#{}", input.user_id),
+                            format!("user#{}", input.user_id),
+                        )
+                        .await?;
+
+                    // delete stories for deleted user
+                    let user_stories = db_client
+                        .query::<Entity>(
+                            "#pk = :pk and begins_with(#sk, :sk)",
+                            HashMap::from([
+                                (String::from("#pk"), String::from("PK")),
+                                (String::from("#sk"), String::from("SK")),
+                            ]),
+                            HashMap::from([
+                                (
+                                    String::from(":pk"),
+                                    AttributeValue::S(format!("user#{}", input.user_id)),
+                                ),
+                                (
+                                    String::from(":sk"),
+                                    AttributeValue::S(String::from("story#")),
+                                ),
+                            ]),
+                            None,
+                        )
+                        .await?;
+                    for ent in user_stories {
+                        if let Entity::Story { pk, sk, .. } = ent {
+                            let _ = db_client.delete(pk, sk.clone()).await;
+
+                            let story_comments = db_client
+                                .query::<Entity>(
+                                    "#sk = :sk",
+                                    HashMap::from([(String::from("#sk"), String::from("SK"))]),
+                                    HashMap::from([(String::from(":sk"), AttributeValue::S(sk))]),
+                                    Some(String::from("GSI1")),
+                                )
+                                .await?;
+
+                            // delete comments for deleted stories
+                            for c in story_comments {
+                                if let Entity::Comment { pk, sk, .. } = c {
+                                    let _ = db_client.delete(pk, sk.clone()).await;
+                                }
+                            }
+                        }
+                    }
+
+                    Ok(response(200, None))
+                }
+                ("story", "delete") => {
+                    let Ok(input) = serde_json::from_str::<DeleteStoryInput>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let _ = db_client
+                        .delete(
+                            format!("user#{}", input.user_id),
+                            format!("story#{}", input.story_id),
+                        )
+                        .await?;
+
+                    let story_comments = db_client
+                        .query::<Entity>(
+                            "#sk = :sk",
+                            HashMap::from([(String::from("#sk"), String::from("SK"))]),
+                            HashMap::from([(String::from(":sk"), AttributeValue::S(format!("story#{}", input.story_id)))]),
+                            Some(String::from("GSI1")),
+                        )
+                        .await?;
+
+                    // delete comments for deleted story
+                    for c in story_comments {
+                        if let Entity::Comment { pk, sk, .. } = c {
+                            let _ = db_client.delete(pk, sk.clone()).await;
+                        }
+                    }
+
+                    Ok(response(200, None))
+                }
+                ("comment", "delete") => {
+                    let Ok(input) = serde_json::from_str::<DeleteCommentInput>(body) else {
+                        return Ok(response(400, Some(Body::Text(String::from("malformed request")))))
+                    };
+                    let _ = db_client
+                        .delete(
+                            format!("comment#{}", input.comment_id),
+                            format!("story#{}", input.story_id),
+                        )
+                        .await?;
+                    Ok(response(200, None))
+                }
                 (_, _) => Ok(response(
                     400,
                     Some(Body::Text(String::from("invalid request"))),

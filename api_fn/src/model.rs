@@ -7,9 +7,20 @@ pub struct CreateUserInput {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteUserInput {
+    pub user_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CreateStoryInput {
     pub user_id: String,
     pub content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteStoryInput {
+    pub user_id: String,
+    pub story_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,6 +28,12 @@ pub struct CreateCommentInput {
     pub story_id: String,
     pub user_id: String,
     pub content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteCommentInput {
+    pub comment_id: String,
+    pub story_id: String,
 }
 
 /// record in dynamodb
