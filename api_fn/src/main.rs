@@ -257,7 +257,10 @@ async fn function_handler(
                         .query::<Entity>(
                             "#sk = :sk",
                             HashMap::from([(String::from("#sk"), String::from("SK"))]),
-                            HashMap::from([(String::from(":sk"), AttributeValue::S(format!("story#{}", input.story_id)))]),
+                            HashMap::from([(
+                                String::from(":sk"),
+                                AttributeValue::S(format!("story#{}", input.story_id)),
+                            )]),
                             Some(String::from("GSI1")),
                         )
                         .await?;
