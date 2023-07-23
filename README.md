@@ -1,6 +1,6 @@
 # Simple social network
 
-A simple social network backend rest api with persistent data;
+A simple social network backend REST API with persistent data;
 
 ## Overview
 
