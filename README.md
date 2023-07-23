@@ -4,7 +4,7 @@ A simple social network backend REST API with persistent data.
 
 ## Overview
 
-I'm using [AWS serverless application](https://aws.amazon.com/serverless/sam/) model and 1 [rust lambda](https://github.com/awslabs/aws-lambda-rust-runtime) function to implement the API.
+I'm using [AWS serverless application model](https://aws.amazon.com/serverless/sam/) and (1) [rust lambda](https://github.com/awslabs/aws-lambda-rust-runtime) function to implement the API.
 
 ![API overview](./static/overview.png)
 
