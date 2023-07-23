@@ -220,7 +220,7 @@ async fn function_handler(
                         .await?;
                     for ent in user_stories {
                         if let Entity::Story { pk, sk, .. } = ent {
-                            let _ = db_client.delete(pk, sk.clone()).await;
+                            let _ = db_client.delete(pk, sk.clone()).await?;
 
                             let story_comments = db_client
                                 .query::<Entity>(
@@ -234,7 +234,7 @@ async fn function_handler(
                             // delete comments for deleted stories
                             for c in story_comments {
                                 if let Entity::Comment { pk, sk, .. } = c {
-                                    let _ = db_client.delete(pk, sk.clone()).await;
+                                    let _ = db_client.delete(pk, sk.clone()).await?;
                                 }
                             }
                         }
@@ -268,7 +268,7 @@ async fn function_handler(
                     // delete comments for deleted story
                     for c in story_comments {
                         if let Entity::Comment { pk, sk, .. } = c {
-                            let _ = db_client.delete(pk, sk.clone()).await;
+                            let _ = db_client.delete(pk, sk.clone()).await?;
                         }
                     }
 
