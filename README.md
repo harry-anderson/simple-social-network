@@ -12,11 +12,11 @@ I'm using [AWS serverless application model](https://aws.amazon.com/serverless/s
 
 I'm using AWS Dynamodb as a database and [single table design](https://www.alexdebrie.com/posts/dynamodb-single-table) to store and retrieve relational data.
 
-DynamoDB main table - indexed by user_id
+DynamoDB main table
 
 ![Main table](./static/single_table_main.png)
 
-DynamoDB global secondary index - indexed by post_id
+DynamoDB global secondary index 1
 
 ![GSI 1](./static/single_table_gsi1.png)
 
