@@ -23,14 +23,6 @@ DynamoDB global secondary index 1
 
 ## API
 
-### Live endpoint
-You can use this deployed endpoint to test the API via curl.
-
-Set `$BASE_URL` environment variable
-```bash
-export BASE_URL=https://871nsqi1pj.execute-api.us-east-1.amazonaws.com/Prod
-```
-
 ### Create User
 ```bash
 curl --request POST \
